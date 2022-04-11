@@ -24,7 +24,7 @@ namespace ScottJasperse.OData.Cosmos
             var queryBuilder = new StringBuilder();
             var queryParameters = new Dictionary<string, object>();
             Func<object, string> createQueryParameter = value => {
-                var paramName = $"@{queryParameters.Count() + 1}";
+                var paramName = $"@p{queryParameters.Count() + 1}";
                 queryParameters.Add(paramName, value);
                 return paramName;
             };
