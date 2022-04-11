@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.OData.UriParser;
 
 namespace ScottJasperse.OData.Cosmos
@@ -11,12 +7,12 @@ namespace ScottJasperse.OData.Cosmos
     {
         private readonly StringBuilder stringBuilder = new StringBuilder();
         private readonly Func<object, string> createParameter;
-        private readonly Func<string, string> propertyNameTranslator;
+        private readonly PropertyNameAccessor propertyNameAccessor;
 
-        public FilterVisitor(Func<object, string> createParameter, Func<string, string> propertyNameTranslator)
+        public FilterVisitor(Func<object, string> createParameter, PropertyNameAccessor propertyNameAccessor)
         {
             this.createParameter = createParameter;
-            this.propertyNameTranslator = propertyNameTranslator;
+            this.propertyNameAccessor = propertyNameAccessor;
 
             stringBuilder.Append("WHERE ");
         }
@@ -48,27 +44,9 @@ namespace ScottJasperse.OData.Cosmos
 
         public override QueryNode Visit(SingleValuePropertyAccessNode nodeIn)
         {
-            var heirarchy = new List<string>();
-            heirarchy.Add("c");
-            heirarchy.AddRange(GetAncestors(nodeIn.Source));
-            heirarchy.Add(propertyNameTranslator(nodeIn.Property.Name));
-
-            stringBuilder.Append(string.Join(".", heirarchy));
+            stringBuilder.Append("c." + propertyNameAccessor.GetFullPropertyPath(nodeIn));
 
             return nodeIn;
-        }
-
-        private IEnumerable<string> GetAncestors(SingleValueNode node)
-        {
-            var fieldStack = new List<string>();
-
-            if (node is SingleNavigationNode navNode)
-            {
-                fieldStack.AddRange(GetAncestors(navNode.Source));
-                fieldStack.Add(propertyNameTranslator(navNode.NavigationProperty.Name));
-            }
-            
-            return fieldStack;
         }
 
         public override QueryNode Visit(ConstantNode nodeIn)

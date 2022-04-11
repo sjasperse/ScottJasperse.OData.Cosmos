@@ -72,6 +72,18 @@ public class Tests
     public Task OrderByName()
         => BaseFilterTest("$orderBy=name", "SELECT * FROM c ORDER BY c.name");
 
+    [Fact]
+    public Task OrderByGrandChild()
+        => BaseFilterTest("$orderBy=child/grandChild/text", "SELECT * FROM c ORDER BY c.child.grandChild.text");
+
+    [Fact]
+    public Task OrderByMultiple()
+        => BaseFilterTest("$orderBy=id,name", "SELECT * FROM c ORDER BY c.id, c.name");
+
+    [Fact]
+    public Task OrderByDescending()
+        => BaseFilterTest("$orderBy=id desc", "SELECT * FROM c ORDER BY c.id DESC");
+
     private async Task BaseFilterTest(string query, string expectedSql, object? expectedP1Value = null, object? expectedP2Value = null)
     {
         var response = await _client.GetAsync($"/testmodels/query?{query}");

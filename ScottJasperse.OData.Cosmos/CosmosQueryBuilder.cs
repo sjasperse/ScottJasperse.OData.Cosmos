@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Azure.Cosmos;
 using Microsoft.OData.UriParser;
@@ -72,11 +68,18 @@ namespace ScottJasperse.OData.Cosmos
         private string CreateOrderBy(OrderByQueryOption orderByOption)
         {
             var nodesAsText = new List<string>();
+            var propertyNameAccessor = new PropertyNameAccessor(ToCamelCase);
 
             foreach (var node in orderByOption.OrderByNodes)
             {
                 if (node is OrderByPropertyNode propNode) {
-                    var nodeAsText = "c." + ToCamelCase(propNode.Property.Name);
+                    var propName = ToCamelCase(propNode.Property.Name);
+                    if (propNode.OrderByClause.Expression is SingleValuePropertyAccessNode svpNode)
+                    {
+                        propName = propertyNameAccessor.GetFullPropertyPath(svpNode);
+                    }
+
+                    var nodeAsText = "c." + propName;
 
                     if (node.Direction == OrderByDirection.Descending) {
                         nodeAsText += " DESC";
@@ -105,9 +108,10 @@ namespace ScottJasperse.OData.Cosmos
 
         private string CreateWhere(FilterQueryOption filterOption, Func<object, string> createQueryParameter)
         {
+            var propertyNameAccessor = new PropertyNameAccessor(ToCamelCase);
             var filterVisitor = new FilterVisitor(
                 createQueryParameter,
-                ToCamelCase
+                propertyNameAccessor
             );
 
             filterOption.FilterClause.Expression.Accept(filterVisitor);
