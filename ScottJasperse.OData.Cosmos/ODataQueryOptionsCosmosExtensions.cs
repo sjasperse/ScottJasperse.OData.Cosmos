@@ -7,10 +7,18 @@ namespace ScottJasperse.OData.Cosmos
 {
     public static class ODataQueryOptionsCosmosExtensions
     {
-        public static OneOf<QueryDefinition, BadRequestError> CreateCosmosQuery(this ODataQueryOptions query)
+        public static (QueryDefinition Query, QueryRequestOptions RequestOptions) CreateCosmosQuery(this ODataQueryOptions query)
         {
             var cosmosQueryBuilder = new CosmosQueryBuilder();
             return cosmosQueryBuilder.CreateCosmosQuery(query);
+        }
+
+        public static FeedIterator<T> GetItemQueryIteratorFromOData<T>(this Container cosmosContainer, ODataQueryOptions query, string continuationToken)
+        {
+            var cosmosQueryBuilder = new CosmosQueryBuilder();
+            var results = cosmosQueryBuilder.CreateCosmosQuery(query);
+
+            return cosmosContainer.GetItemQueryIterator<T>(results.Query, continuationToken, results.RequestOptions);
         }
     }
 
@@ -19,7 +27,7 @@ namespace ScottJasperse.OData.Cosmos
         private bool ValidateFieldName(string fieldName)
             => true;
 
-        public OneOf<QueryDefinition, BadRequestError> CreateCosmosQuery(ODataQueryOptions query)
+        public (QueryDefinition Query, QueryRequestOptions RequestOptions) CreateCosmosQuery(ODataQueryOptions query)
         {
             var queryBuilder = new StringBuilder();
             var queryParameters = new Dictionary<string, object>();
@@ -49,14 +57,22 @@ namespace ScottJasperse.OData.Cosmos
             foreach (var p in queryParameters)
                 cosmosQuery = cosmosQuery.WithParameter(p.Key, p.Value);
 
-            return cosmosQuery;
+            var requestOptions = new QueryRequestOptions();
+            if (query.Top != null)
+            {
+                requestOptions.MaxItemCount = query.Top.Value;
+            }
+
+            return (cosmosQuery, requestOptions);
         }
 
         private string CreateSelect(SelectExpandQueryOption selectOption)
         {
             if (selectOption.SelectExpandClause.AllSelected) return "SELECT * ";
 
-            var fieldList = selectOption.SelectExpandClause.SelectedItems.Select(GetFieldName).ToArray();
+            var fieldList = selectOption.SelectExpandClause.SelectedItems
+                .Select(x => $"c.{GetFieldName(x)}")
+                .ToArray();
 
             return $"SELECT {string.Join(", ", fieldList)} ";
         }
@@ -97,7 +113,4 @@ namespace ScottJasperse.OData.Cosmos
             return source.Substring(0, 1).ToLower() + source.Substring(1);
         }
     }
-
-
-    public record BadRequestError(IEnumerable<string> Messages);
 }

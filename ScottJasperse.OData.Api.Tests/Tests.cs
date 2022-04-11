@@ -24,18 +24,9 @@ public class Tests
         _client = application.CreateClient();
     }
 
-    private string UrlEncode(string value)
-        => System.Net.WebUtility.UrlEncode(value);
-
     [Fact]
-    public async Task NoParameters()
-    {
-        var response = await _client.GetAsync("/query");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var data = await response.Content.ReadAsJsonAsync();
-        data.Value<string>("queryText").Should().Be("SELECT * FROM c");
-    }
+    public Task NoParameters()
+        => BaseFilterTest("", "SELECT * FROM c");
 
     [Fact]
     public Task FilterForIdEq()
@@ -77,9 +68,10 @@ public class Tests
     public Task FilterForAnd()
         => BaseFilterTest("$filter=id eq 1 and name eq 'test'", "SELECT * FROM c WHERE c.id = @p1 AND c.name = @p2", 1, "test");
 
+
     private async Task BaseFilterTest(string query, string expectedSql, object? expectedP1Value = null, object? expectedP2Value = null)
     {
-        var response = await _client.GetAsync($"/query?{query}");
+        var response = await _client.GetAsync($"/testmodels/query?{query}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var data = await response.Content.ReadAsJsonAsync();
@@ -89,9 +81,9 @@ public class Tests
             var value = (object)"Unrecognized type";
 
             if (expectedValue is int)
-                value = data["parameters"]![paramName]!.Value<int>();
+                value = data["queryParameters"]![paramName]!.Value<int>();
             else if (expectedValue is string)
-                value = data["parameters"]![paramName]!.Value<string>();
+                value = data["queryParameters"]![paramName]!.Value<string>();
 
             value.Should().Be(expectedValue);
         };

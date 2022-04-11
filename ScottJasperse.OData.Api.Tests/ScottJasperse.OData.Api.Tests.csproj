@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ScottJasperse.ODataTest\ScottJasperse.ODataTest.csproj" />
+    <ProjectReference Include="..\ScottJasperse.OData.Api\ScottJasperse.OData.Api.csproj" />
   </ItemGroup>
 
 </Project>
