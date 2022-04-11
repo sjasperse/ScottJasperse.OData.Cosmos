@@ -68,6 +68,9 @@ public class Tests
     public Task FilterForAnd()
         => BaseFilterTest("$filter=id eq 1 and name eq 'test'", "SELECT * FROM c WHERE c.id = @p1 AND c.name = @p2", 1, "test");
 
+    [Fact]
+    public Task OrderByName()
+        => BaseFilterTest("$orderBy=name", "SELECT * FROM c ORDER BY c.name");
 
     private async Task BaseFilterTest(string query, string expectedSql, object? expectedP1Value = null, object? expectedP2Value = null)
     {
